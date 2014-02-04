@@ -14,6 +14,9 @@ module.exports = function(grunt) {
                      'src/interactiveLayer.js',
                      'src/tooltip.js',
                      'src/utils.js',
+
+                     'src/canvas.js',
+
                      'src/models/axis.js',
                      'src/models/historicalBar.js',
                      'src/models/bullet.js',
@@ -46,6 +49,7 @@ module.exports = function(grunt) {
                      'src/models/sparklinePlus.js',
                      'src/models/stackedArea.js',
                      'src/models/stackedAreaChart.js',
+
                      'src/outro.js'
                      ],
                 dest: 'nv.d3.js'
