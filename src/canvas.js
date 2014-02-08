@@ -30,33 +30,34 @@ set values. Defaults:
 	defs: SVG_Defs_Element # <defs> to attach gradient and filter definitions to.
 	}
 */
-function Canvas (root, options) {
-	var margin, width, height, svg, scales, canvas;
+function Canvas (root, chart) {
+    var margin, width, height, svg, scales, canvas;
 
-	root == null && (root = 'body');
-
-	options == null && (options = {});
-	options.size || (options.size = {});
-	options.margin || (options.margin = {});
-	options.scale || (options.scale = {});
-
-	margin = {
-		top: options.margin.top || 20,
-		right: options.margin.top || 20,
-		bottom: options.margin.top || 30,
-		left: options.margin.top || 40
-	};
-
-	margin.leftright = margin.left + margin.right;
-	margin.topbottom = margin.top + margin.bottom;
-
-	width = (options.size.width || parseInt(svg.style('width')) || 960);
-	height = (options.size.height || parseInt(svg.style('height')) || 500);
-
+    root == null && (root = 'body');
 	svg = d3.select(root).attr({
 		width: width,
 		height: height
 	});
+
+    options = chart.options;
+    options.size || (options.size = {});
+    options.margin || (options.margin = {});
+    options.scale || (options.scale = {});
+    options.domain || (options.domain = {});
+
+    margin = {
+        top: options.margin.top || 20,
+        right: options.margin.top || 20,
+        bottom: options.margin.top || 30,
+        left: options.margin.top || 40
+    };
+
+    margin.leftright = margin.left + margin.right;
+    margin.topbottom = margin.top + margin.bottom;
+
+    width = (options.size.width || parseInt(svg.style('width')) || 960);
+    height = (options.size.height || parseInt(svg.style('height')) || 500);
+
 
 	scales = {
 		x: d3.scale[options.scale.x || 'linear']()
@@ -69,32 +70,32 @@ function Canvas (root, options) {
 			.nice()
 	};
 
-	canvas = {
-		size: {
-			width: width,
-			height: height,
-			available: {
-				width: width - margin.leftright,
-				height: height - margin.topbottom
-			},
+	chart.size = {
+		width: width,
+		height: height,
+		available: {
+			width: width - margin.leftright,
+			height: height - margin.topbottom
 		},
-		margin: margin,
-		scale: scales,
-		svg: svg,
-		defs: svg.select('defs'),
-		dispatch: d3.dispatch.apply(null, options.dispatch || [])
 	};
-	return canvas;
+    chart.margin = margin,
+	chart.scale = scales,
+	chart.svg = svg,
+	chart.defs = svg.select('defs'),
+	chart.dispatch = d3.dispatch.apply(null, options.dispatch || [])
 }
 
-function Chart (root, options) {
-	var chart = Canvas(root, options);
-
-	chart.noData = options.noData || 'No Data Available.';
-	chart.color = options.color || nv.utils.defaultColor();
+function Chart (options) {
+	// var chart = Canvas(root, options);
+    options = options || {};
+    var chart = {
+        options: options,
+        noData: options.noData || 'No Data Available.',
+        color: options.color || nv.utils.defaultColor()
+    };
 
 	Chart.axis(chart, options);
-	Chart.state(chart, options);
+	Chart.defaultState(chart, options);
 	Chart.legend(chart, options);
 
 	chart.tooltip = options.tooltip ||
@@ -109,28 +110,35 @@ function Chart (root, options) {
 	return chart;
 }
 
+Chart.canvas = function(chart, root){
+    Canvas(root, chart)
+};
+
 Chart.axis = function (chart, options) {
-	chart.axis = options.axis || options.axis = {
+	chart.axis = options.axis || {
 		x: nv.models.axis(),
 		y: nv.models.axis()
 	};
 
-	chart.axis.rightAlignY = options.axis.rightAlignY || false;
-	chart.axis.topAlignX = options.axis.topAlignX || false;
+	chart.axis.rightAlignY = chart.axis.rightAlignY || false;
+	chart.axis.topAlignX = chart.axis.topAlignX || false;
 
-    xAxis
-        .orient((options.axis.topAlignX) ? 'top' : 'bottom')
+    chart.axis.x
+        .orient((chart.axis.topAlignX) ? 'top' : 'bottom')
         .tickPadding(7);
-    yAxis
-        .orient((options.axis.rightAlignY) ? 'right' : 'left');
+    chart.axis.y
+        .orient((chart.axis.rightAlignY) ? 'right' : 'left');
+
+    chart.xAxis = chart.axis.x;
+    chart.yAxis = chart.axis.y;
 };
 
 Chart.axis.build = function (chart) {
     if (chart.axis.x) {
         chart.axis.x
             .scale(chart.scale.x)
-            .ticks(chart.size.avialable.width / 100)
-            .tickSize(-chart.size.avialable.eight, 0);
+            .ticks(chart.size.available.width / 100)
+            .tickSize(-chart.size.available.eight, 0);
         chart.g.select('.nv-x.nv-axis')
             .attr('transform',
                 'translate(0,' + chart.scale.y.range()[0] + ')'
@@ -154,16 +162,16 @@ Chart.legend = function (chart, options) {
 
 Chart.legend.build = function (chart, data) {
 	if(!chart.legend){ return; }
-    chart.legend.width(availableWidth);
-    g.select('.nv-legendWrap')
+    chart.legend.width(chart.size.available.width);
+    chart.svg.select('.nv-legendWrap')
         .datum(data)
-        .call(legend);
-    if (otions.margin.top != legend.height()) {
-        otions.margin.top = legend.height();
-        availableHeight = (otions.height || parseInt(container.style('height')) || 400) - margin.top - margin.bottom;
+        .call(chart.legend);
+    if (chart.margin.top != chart.legend.height()) {
+        chart.margin.top = chart.legend.height();
+        availableHeight = (chart.size.height || parseInt(chart.svg.style('height')) || 400) - margin.top - margin.bottom;
     }
-    wrap.select('.nv-legendWrap')
-        .attr('transform', 'translate(0,' + (-otions.margin.top) + ')')
+    chart.wrap.select('.nv-legendWrap')
+        .attr('transform', 'translate(0,' + (-chart.margin.top) + ')')
 }
 
 Chart.defaultState = function (chart, options) {
@@ -191,21 +199,92 @@ Chart.checkData = function(chart, data){
     if (!data || !data.length || !data.filter(function (d) {
         return d.values.length
     }).length) {
-        var noDataText = chart.container.selectAll('.nv-noData').data([noData]);
+        var noDataText = chart.svg.selectAll('.nv-noData').data([chart.noData]);
         noDataText.enter().append('text')
             .attr('class', 'nvd3 nv-noData')
             .attr('dy', '-.7em')
             .style('text-anchor', 'middle');
         noDataText
-            .attr('x', margin.left + availableWidth / 2)
-            .attr('y', margin.top + availableHeight / 2)
+            .attr('x', chart.margin.left + chart.size.available.width / 2)
+            .attr('y', chart.margin.top + chart.size.available.height / 2)
             .text(function (d) {
                 return d
             });
         return true;
     } else {
-        container.selectAll('.nv-noData').remove();
+        chart.svg.selectAll('.nv-noData').remove();
         return false;
     }
 }
 
+Chart.attachCallable = function(chart, fn){
+    fn.dispatch = chart.dispatch;
+    fn.legend = chart.legend;
+    fn.xAxis = chart.axis.x;
+    fn.yAxis = chart.yAxis;
+
+    fn.options = nv.utils.optionsFunc.bind(chart);
+    fn.margin = function (_) {
+        margin = chart.options.margin
+        if (!arguments.length) return margin;
+        margin.top = typeof _.top != 'undefined' ? _.top : margin.top;
+        margin.right = typeof _.right != 'undefined' ? _.right : margin.right;
+        margin.bottom = typeof _.bottom != 'undefined' ? _.bottom : margin.bottom;
+        margin.left = typeof _.left != 'undefined' ? _.left : margin.left;
+        return fn;
+    };
+
+    [
+        'width',
+        'height',
+        'showLegend',
+        'showXAxis',
+        'showYAxis',
+        'tooltips',
+        'tooltipContent',
+        'state',
+        'defaultState',
+        'noData'
+    ].forEach(function(property){
+        fn[property] = function (_) {
+            if (!arguments.length) return chart[property];
+            chart[property] = _;
+            return fn;
+        };
+    });
+
+    fn.x = function(){
+        return chart.scales.x.apply(chart.scales.x, arguments);
+    }
+    fn.y = function(){
+        return chart.scales.y.apply(chart.scales.y, arguments);
+    }
+
+    fn.color = function (_) {
+        if (!arguments.length) return chart.color;
+        chart.color = nv.utils.getColor(_);
+        legend.color(chart.color);
+        return fn;
+    };
+
+    fn.rightAlignYAxis = function (_) {
+        if (!arguments.length) return chart.axis.rightAlignY;
+        chart.axis.rightAlignY = _;
+        chart.axis.y.orient((_) ? 'right' : 'left');
+        return fn;
+    };
+    fn.useInteractiveGuideline = function (_) {
+        if (!arguments.length) return chart.useInteractiveGuideline;
+        chart.useInteractiveGuideline = _;
+        if (_ === true) {
+            // fn.interactive(false);
+            // fn.useVoronoi(false);
+        }
+        return fn;
+    };
+
+    fn.transitionDuration = function (_) {
+        nv.deprecated('linefn.transitionDuration');
+        return fn.duration(_);
+    };
+};
