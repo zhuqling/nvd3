@@ -4956,7 +4956,7 @@ nv.models.indentedTree = function() {
 
         var seriesWidths = [];
         series.each(function(d,i) {
-              var legendText = d3.select(this).select('text');
+              var legendText = d3.select(this).select('text').node();
               var nodeTextLength;
               try {
                 nodeTextLength = legendText.getComputedTextLength();
